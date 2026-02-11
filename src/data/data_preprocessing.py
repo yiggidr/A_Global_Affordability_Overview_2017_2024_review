@@ -6,10 +6,16 @@ from dotenv import find_dotenv, load_dotenv
 import duckdb
 import os
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+
 
 def make_parquet(bucket: str, input_path: str, output_path: str = None) -> str:
     """Convert CSV to Parquet on S3 using DuckDB."""
-    logger = logging.getLogger(__name__)
     
     if output_path is None:
         output_path = input_path.replace(".csv", ".parquet")
@@ -33,7 +39,7 @@ def make_parquet(bucket: str, input_path: str, output_path: str = None) -> str:
 
 def load_data(path: str) -> duckdb.DuckDBPyRelation:
     """Load dataset from Parquet entirely in DuckDB."""
-    logger = logging.getLogger(__name__)
+
     path = Path(path)
     
     logger.info(f"Loading data from {path}")
@@ -85,7 +91,6 @@ NUMERIC_COLS = [
 
 def clean_data(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:
     """Clean and engineer features entirely in SQL."""
-    logger = logging.getLogger(__name__)
     
     return rel.sql("""
         SELECT *,
@@ -114,7 +119,6 @@ def clean_data(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:
 
 def region_consistency_check(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:
     """Validate each country maps to exactly one region using SQL."""
-    logger = logging.getLogger(__name__)
     
     inconsistent = rel.sql("""
         SELECT country, count(DISTINCT region) as region_count
@@ -139,7 +143,6 @@ def region_consistency_check(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRel
 @click.argument('output_filepath', type=click.Path())
 def main(input_filepath, output_filepath):
     """Run data processing pipeline entirely in DuckDB."""
-    logger = logging.getLogger(__name__)
     load_dotenv()
     
     logger.info('Starting data processing pipeline')
