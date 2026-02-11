@@ -5,15 +5,14 @@ description = 'This MLOps project operationalizes a Kaggle machine learning note
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "awscli>=1.44.36",
-    "click>=8.3.1",
-    "coverage>=7.13.4",
-    "duckdb>=1.4.4",
-    "flake8>=7.3.0",
-    "pandas>=3.0.0",
+    "duckdb",
+    "flake8",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "plotly",
     "python-dotenv>=0.5.1",
-    "pyyaml>=6.0.3",
-    "ruff>=0.15.0",
-    "scikit-learn>=1.8.0",
-    "sphinx>=7.3.7",
+    "pyyaml",
+    "ruff",
+    "scikit-learn",
 ]
