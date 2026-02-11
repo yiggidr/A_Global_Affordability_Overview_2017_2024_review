@@ -1,7 +1,19 @@
 [project]
-name = "a-global-affordability-overview-2017-2024"
+name = "a_global_affordability_overview_2017_2024"
 version = "0.1.0"
 description = 'This MLOps project operationalizes a Kaggle machine learning notebook [A Global Affordability Overview (2017–2024)](https://www.kaggle.com/code/hassanjameelahmed/a-global-affordability-overview-2017-2024) using Argo Workflows for production deployment'
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "awscli>=1.44.36",
+    "click>=8.3.1",
+    "coverage>=7.13.4",
+    "duckdb>=1.4.4",
+    "flake8>=7.3.0",
+    "pandas>=3.0.0",
+    "python-dotenv>=0.5.1",
+    "pyyaml>=6.0.3",
+    "ruff>=0.15.0",
+    "scikit-learn>=1.8.0",
+    "sphinx>=7.3.7",
+]
