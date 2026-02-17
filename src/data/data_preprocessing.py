@@ -4,6 +4,7 @@ from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
 import duckdb
 import os
+from utils import configure_s3
 
 
 def make_parquet(bucket: str, input_path: str, output_path: str = None) -> str:
@@ -14,6 +15,7 @@ def make_parquet(bucket: str, input_path: str, output_path: str = None) -> str:
         output_path = input_path.replace(".csv", ".parquet")
 
     con = duckdb.connect(database=":memory:")
+    configure_s3(con)
 
     logger.info(f"Converting s3://{bucket}/{input_path} → s3://{bucket}/{output_path}")
     con.sql(f"""
