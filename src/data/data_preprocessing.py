@@ -186,6 +186,8 @@ def main(input_filepath, output_filepath):
 
 
 if __name__ == "__main__":
+
+    
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
