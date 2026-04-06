@@ -12,3 +12,5 @@ with some informations as MY_BUCKET, CHEMIN_FICHIER, CHEMIN_PARQUET
 This MLOps project operationalizes a Kaggle machine learning notebook [A Global Affordability Overview (2017–2024)](https://www.kaggle.com/code/hassanjameelahmed/a-global-affordability-overview-2017-2024) using Argo Workflows for production deployment
 
 
+Pour Lancer le code utiliser pour l'instant  make run , pour linter ou formatter utiliser make lint et make format.
+
