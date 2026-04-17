@@ -16,4 +16,5 @@ dependencies = [
     "pyyaml",
     "ruff",
     "scikit-learn",
+    "streamlit>=1.56.0",
 ]
