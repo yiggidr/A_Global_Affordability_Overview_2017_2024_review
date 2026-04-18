@@ -8,9 +8,10 @@ dependencies = [
     "duckdb",
     "kagglehub>=1.0.0",
     "matplotlib",
-    "numpy", 
+    "numpy",
     "pandas",
     "plotly",
+    "pylint>=4.0.5",
     "python-dotenv>=0.5.1",
     "pyyaml",
     "scikit-learn",
@@ -47,6 +48,14 @@ quote-style = "double"
 [tool.uv]
 package = true
 dev-dependencies = ["ruff>=0.5.0", "pre-commit>=3.7.0"]
+
+[tool.pytest.ini_options]
+# Pytest reads this section; run tests with: pytest  or  uv run pytest
+testpaths = ["tests"]
+pythonpath = ["src"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = ["-ra", "-q"]
 
 [project.scripts]
 diet-dashboard = "src.app:main"
