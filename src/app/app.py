@@ -7,10 +7,16 @@ across countries, years, regions, and data-quality segments.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import streamlit as st
 
+from app.constants import (
+    COMPONENT_FOCUS_YEAR,
+    CSS_PATH,
+    DATA_PATH,
+    RANKING_DISPLAY_NAMES,
+)
+from app.helpers import pretty_df, read_css_file
 from data.db import filter_data, load_data
 from features.analysis import (
     build_country_ranking,
@@ -37,58 +43,6 @@ from features.plots import (
 
 logger = logging.getLogger(__name__)
 
-DISPLAY_NAMES: dict[str, str] = {
-    "year": "Year",
-    "country": "Country",
-    "region": "Region",
-    "region_clean": "Region",
-    "cost_category": "Cost category",
-    "data_quality": "Data quality",
-    "region_is_suspect": "Region is suspect",
-    "cost_healthy_diet_ppp_usd": "Cost healthy diet PPP USD",
-    "annual_cost_healthy_diet_usd": "Annual cost healthy diet USD",
-    "cost_vegetables_ppp_usd": "Cost vegetables PPP USD",
-    "cost_fruits_ppp_usd": "Cost fruits PPP USD",
-    "total_food_components_cost": "Total food components cost",
-    "food_components_sum": "Food components sum",
-    "annual_from_ppp_usd": "Annual from PPP USD",
-    "annual_gap_usd": "Annual gap USD",
-    "yoy_pct": "YoY %",
-}
-
-RANKING_DISPLAY_NAMES: dict[str, str] = {
-    "country": "Country",
-    "first_year": "First year",
-    "last_year": "Last year",
-    "ppp_first_year": "PPP first year",
-    "ppp_last_year": "PPP last year",
-    "abs_change": "Absolute change",
-    "pct_change": "Percent change",
-}
-
-DATA_PATH = "src/data/price_of_healthy_diet_clean.csv"
-CSS_PATH = "style.css"
-COMPONENT_FOCUS_YEAR = 2021
-
-
-st.set_page_config(page_title="Healthy Diet Dashboard", layout="wide")
-
-
-def pretty_df(df):
-    """Rename dataframe columns using dashboard-friendly display names.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Input dataframe with technical column names.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Dataframe with renamed columns where mappings exist.
-    """
-    return df.rename(columns=DISPLAY_NAMES)
-
 
 def load_css(file_name: str) -> None:
     """Load a local CSS file and inject it into the Streamlit app.
@@ -103,13 +57,9 @@ def load_css(file_name: str) -> None:
     None
         This function injects CSS into the Streamlit page if the file exists.
     """
-    css_path = Path(file_name)
-    if css_path.exists():
-        logger.info("Loading CSS from %s", css_path)
-        with open(css_path, encoding="utf-8") as file:
-            st.markdown(f"<style>{file.read()}</style>", unsafe_allow_html=True)
-    else:
-        logger.warning("CSS file not found: %s", css_path)
+    css = read_css_file(file_name)
+    if css is not None:
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -397,7 +347,8 @@ def render_relationships_tab(
 
     st.subheader("Component breakdown")
     st.caption(
-        "This section is fixed to 2021 because component-level variables are only usable for that year."
+        f"This section is fixed to {COMPONENT_FOCUS_YEAR} because component-level "
+        "variables are only usable for that year."
     )
     component_fig = plot_component_breakdown(filtered_df, COMPONENT_FOCUS_YEAR)
 
@@ -447,6 +398,8 @@ def main() -> None:
     None
         Executes the full Streamlit app.
     """
+    st.set_page_config(page_title="Healthy Diet Dashboard", layout="wide")
+
     logger.info("Starting Healthy Diet Dashboard")
 
     load_css(CSS_PATH)
@@ -544,4 +497,5 @@ def main() -> None:
     logger.info("Dashboard rendered successfully")
 
 
-main()
+if __name__ == "__main__":
+    main()

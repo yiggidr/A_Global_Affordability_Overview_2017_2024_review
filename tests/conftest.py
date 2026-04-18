@@ -1,8 +1,8 @@
 """Pytest shared fixtures.
 
-The dashboard module ``app.app`` runs ``main()`` at import time and depends on
-Streamlit; keep integration-style checks separate and test pure functions in
-``data.db`` and ``features`` here.
+Pure dashboard logic lives in ``app.helpers`` and ``app.constants`` (no
+Streamlit). ``app.app`` still uses Streamlit for UI; test layout/widgets with
+Streamlit's testing utilities if you add those tests later.
 """
 
 from __future__ import annotations

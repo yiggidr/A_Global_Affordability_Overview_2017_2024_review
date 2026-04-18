@@ -58,4 +58,4 @@ python_functions = ["test_*"]
 addopts = ["-ra", "-q"]
 
 [project.scripts]
-diet-dashboard = "src.app:main"
+diet-dashboard = "app.app:main"
