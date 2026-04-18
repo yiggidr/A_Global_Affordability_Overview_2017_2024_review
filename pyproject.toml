@@ -8,7 +8,7 @@ dependencies = [
     "duckdb",
     "kagglehub>=1.0.0",
     "matplotlib",
-    "numpy",
+    "numpy", 
     "pandas",
     "plotly",
     "python-dotenv>=0.5.1",
