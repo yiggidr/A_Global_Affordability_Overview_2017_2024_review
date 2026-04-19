@@ -17,6 +17,7 @@ dependencies = [
     "scikit-learn",
     "seaborn>=0.13.2",
     "streamlit>=1.36.0",
+    "streamlit-analytics2>=0.10.6",
 ]
 
 [dependency-groups]
@@ -47,7 +48,7 @@ quote-style = "double"
 
 [tool.uv]
 package = true
-dev-dependencies = ["ruff>=0.5.0", "pre-commit>=3.7.0"]
+# dev-dependencies = ["ruff>=0.5.0", "pre-commit>=3.7.0"]
 
 [tool.pytest.ini_options]
 # Pytest reads this section; run tests with: pytest  or  uv run pytest

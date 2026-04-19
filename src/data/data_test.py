@@ -1,4 +1,5 @@
 import os
+
 import duckdb
 from dotenv import load_dotenv
 
@@ -18,9 +19,9 @@ print(df)
 # # Si ça marche, tu peux ensuite écrire le parquet
 # con.execute(f"""
 #     COPY (
-#         SELECT * 
+#         SELECT *
 #         FROM read_csv('s3://{MY_BUCKET}/{CHEMIN_PARQUET}')
-#     ) 
-#     TO 's3://{MY_BUCKET}/{OUTPUT_PATH}' 
+#     )
+#     TO 's3://{MY_BUCKET}/{OUTPUT_PATH}'
 #     (FORMAT PARQUET)
 # """)

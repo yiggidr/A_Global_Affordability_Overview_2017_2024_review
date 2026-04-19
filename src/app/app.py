@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import logging
 
+import duckdb
 import streamlit as st
+import streamlit_analytics2 as streamlit_analytics
 
 from app.constants import (
     COMPONENT_FOCUS_YEAR,
@@ -64,30 +66,13 @@ def load_css(file_name: str) -> None:
 
 @st.cache_data
 def get_data():
-    """Load and cache the dashboard dataset.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Preprocessed dashboard dataset.
-    """
+    """Load and cache the dashboard dataset."""
     logger.info("Loading dashboard data from %s", DATA_PATH)
     return load_data(DATA_PATH)
 
 
 def render_sidebar(df):
-    """Render sidebar filters and return selected values.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Full input dataset used to populate filter widgets.
-
-    Returns
-    -------
-    dict
-        Dictionary containing all selected sidebar filter values.
-    """
+    """Render sidebar filters and return selected values."""
     logger.debug("Rendering sidebar filters")
 
     st.sidebar.header("Filters")
@@ -156,13 +141,6 @@ def render_sidebar(df):
         value=True,
     )
 
-    logger.debug(
-        "Sidebar filters selected: year_range=%s, focus_year=%s, metric=%s",
-        year_range,
-        focus_year,
-        metric_col,
-    )
-
     return {
         "min_year": min_year,
         "max_year": max_year,
@@ -182,24 +160,7 @@ def render_sidebar(df):
 def render_kpis(
     filtered_df, metric_col: str, metric_label: str, focus_year: int
 ) -> None:
-    """Render KPI cards for the filtered dataset.
-
-    Parameters
-    ----------
-    filtered_df : pandas.DataFrame
-        Filtered dataset.
-    metric_col : str
-        Selected metric column.
-    metric_label : str
-        Human-readable label for the selected metric.
-    focus_year : int
-        Selected focus year.
-
-    Returns
-    -------
-    None
-        Displays KPI cards in the Streamlit app.
-    """
+    """Render KPI cards for the filtered dataset."""
     logger.debug("Rendering KPI cards")
 
     kpis = compute_kpis(filtered_df, metric_col, focus_year)
@@ -246,17 +207,6 @@ interactive, reusable, and dashboard-oriented application.
 - Which countries or regions face the highest costs and the fastest increases?
 - Are there visible relationships between cost components and total cost?
 - Where are the largest data gaps, and how do they affect interpretation?
-        """
-    )
-
-    st.subheader("Source and attribution")
-    st.markdown(
-        """
-Original analytical framing and project questions come from the Kaggle notebook
-**"A Global Affordability Overview (2017–2024)"** by **Hassan Jameel Ahmed**.
-
-This dashboard is an adapted Streamlit application built from that analytical basis,
-with additional interactive filtering, diagnostics, and dashboard presentation.
         """
     )
 
@@ -385,13 +335,39 @@ def render_insights_tab(
 - The dashboard focuses on descriptive analysis, not causal proof.
 - Many rows are marked as estimated values.
 - Component-cost variables are more sparsely populated than the main cost variables.
-- Region labels appear partially inconsistent in the provided dataset and should be audited before strong regional claims.
         """
     )
 
 
-def main() -> None:
-    """Run the Streamlit dashboard application.
+def render_monitoring_tab() -> None:
+    """Render the technical monitoring tab using DuckDB logs."""
+    st.subheader("Technical Performance Logs")
+    st.markdown(
+        "This tab displays execution times recorded by the backend monitoring system."
+    )
+
+    try:
+        with duckdb.connect(DB_PATH, read_only=True) as conn:
+            logs_df = conn.execute(
+                "SELECT timestamp, function_name, execution_time_seconds, status "
+                "FROM performance_logs ORDER BY timestamp DESC LIMIT 100"
+            ).df()
+
+            if logs_df.empty:
+                st.info("No performance logs available yet.")
+            else:
+                st.dataframe(logs_df, use_container_width=True)
+
+                st.subheader("Average Execution Time by Function")
+                avg_time = conn.execute(
+                    "SELECT function_name, AVG(execution_time_seconds) as avg_time "
+                    "FROM performance_logs GROUP BY function_name"
+                ).df()
+                st.bar_chart(avg_time, x="function_name", y="avg_time")
+
+    except Exception as e:
+        st.error(f"Could not load monitoring data: {e}")
+
 
     Returns
     -------
@@ -409,90 +385,84 @@ def main() -> None:
         "Interactive dashboard for exploring the cost of a healthy diet across countries, years, and quality segments."
     )
 
-    df = get_data()
-    filters = render_sidebar(df)
+    # Audience tracking
+    with streamlit_analytics.track():
+        df = get_data()
+        filters = render_sidebar(df)
 
-    filtered_df = filter_data(
-        df,
-        year_range=filters["year_range"],
-        regions=filters["selected_regions"],
-        categories=filters["selected_categories"],
-        qualities=filters["selected_quality"],
-        countries=filters["selected_countries"],
-        exclude_missing_components=filters["exclude_missing_components"],
-    )
-
-    logger.info("Filtered dataset contains %d rows", len(filtered_df))
-
-    if filtered_df.empty:
-        logger.warning("No data available after applying filters")
-        st.error("No data matches the selected filters.")
-        st.stop()
-
-    if filters["show_region_warning"] and filtered_df["region_is_suspect"].mean() > 0:
-        st.warning(
-            "Region labels appear inconsistent for part of the dataset. Use regional conclusions with caution."
+        filtered_df = filter_data(
+            df,
+            year_range=filters["year_range"],
+            regions=filters["selected_regions"],
+            categories=filters["selected_categories"],
+            qualities=filters["selected_quality"],
+            countries=filters["selected_countries"],
+            exclude_missing_components=filters["exclude_missing_components"],
         )
 
-    render_kpis(
-        filtered_df,
-        filters["metric_col"],
-        filters["metric_label"],
-        filters["focus_year"],
-    )
+        logger.info("Filtered dataset contains %d rows", len(filtered_df))
 
-    tab0, tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        [
-            "Introduction",
-            "Overview",
-            "Countries",
-            "Relationships",
-            "Diagnostics",
-            "Insights",
-        ]
-    )
-    with tab0:
-        render_introduction_tab()
+        if filtered_df.empty:
+            logger.warning("No data available after applying filters")
+            st.error("No data matches the selected filters.")
+            st.stop()
 
-    with tab1:
-        render_overview_tab(
+        render_kpis(
             filtered_df,
             filters["metric_col"],
             filters["metric_label"],
             filters["focus_year"],
         )
 
-    with tab2:
-        render_countries_tab(
-            filtered_df,
-            filters["metric_col"],
-            filters["metric_label"],
-            filters["focus_year"],
+        tabs = st.tabs(
+            [
+                "Introduction",
+                "Overview",
+                "Countries",
+                "Relationships",
+                "Diagnostics",
+                "Insights",
+                "Tech Monitoring",
+            ]
         )
 
-    with tab3:
-        render_relationships_tab(
-            filtered_df,
-            filters["metric_col"],
-            filters["focus_year"],
-            filters["min_year"],
-            filters["max_year"],
-        )
-
-    with tab4:
-        render_diagnostics_tab(
-            filtered_df,
-            filters["metric_col"],
-            filters["focus_year"],
-        )
-
-    with tab5:
-        render_insights_tab(
-            filtered_df,
-            filters["metric_col"],
-            filters["metric_label"],
-            filters["focus_year"],
-        )
+        with tabs[0]:
+            render_introduction_tab()
+        with tabs[1]:
+            render_overview_tab(
+                filtered_df,
+                filters["metric_col"],
+                filters["metric_label"],
+                filters["focus_year"],
+            )
+        with tabs[2]:
+            render_countries_tab(
+                filtered_df,
+                filters["metric_col"],
+                filters["metric_label"],
+                filters["focus_year"],
+            )
+        with tabs[3]:
+            render_relationships_tab(
+                filtered_df,
+                filters["metric_col"],
+                filters["focus_year"],
+                filters["min_year"],
+                filters["max_year"],
+            )
+        with tabs[4]:
+            render_diagnostics_tab(
+                filtered_df, filters["metric_col"], filters["focus_year"]
+            )
+        with tabs[5]:
+            render_insights_tab(
+                filtered_df,
+                filters["metric_col"],
+                filters["metric_label"],
+                filters["focus_year"],
+            )
+        with tabs[6]:
+            render_monitoring_tab()
 
     logger.info("Dashboard rendered successfully")
 
