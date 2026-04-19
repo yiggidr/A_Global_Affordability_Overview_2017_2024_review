@@ -2,7 +2,16 @@
  
 ## Description
 Interactive dashboard exploring the cost of a healthy diet across the world from 2017 to 2024, based on the Kaggle notebook [A Global Affordability Overview (2017–2024)](https://www.kaggle.com/code/hassanjameelahmed/a-global-affordability-overview-2017-2024).
- 
+
+## How to run
+
+From the repository root, with [uv](https://docs.astral.sh/uv/) installed:
+
+```bash
+uv sync
+uv run streamlit run src/app/app.py
+```
+
 ## Dashboard
 The dashboard is accessible at:
 **https://food-affordability-django75.lab.sspcloud.fr**
