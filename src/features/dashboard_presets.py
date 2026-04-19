@@ -44,8 +44,10 @@ def builtin_presets(df: pd.DataFrame) -> dict[str, dict[str, Any]]:
         "show_region_warning": True,
     }
 
-    europe_only = ["Europe"] if "Europe" in region_options else (
-        [region_options[0]] if region_options else []
+    europe_only = (
+        ["Europe"]
+        if "Europe" in region_options
+        else ([region_options[0]] if region_options else [])
     )
 
     recent_start = max(min_year, min(2020, max_year))

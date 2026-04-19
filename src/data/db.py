@@ -43,6 +43,7 @@ except Exception as e:
 
 def log_performance(func):
     """Decorator to log function execution time to DuckDB."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -59,12 +60,16 @@ def log_performance(func):
                 with duckdb.connect(DB_PATH) as conn:
                     conn.execute(
                         "INSERT INTO performance_logs (function_name, execution_time_seconds, status) VALUES (?, ?, ?)",
-                        (func.__name__, execution_time, status)
+                        (func.__name__, execution_time, status),
                     )
-                logger.info(f"Performance log: {func.__name__} executed in {execution_time:.3f}s [{status}]")
+                logger.info(
+                    f"Performance log: {func.__name__} executed in {execution_time:.3f}s [{status}]"
+                )
             except Exception as db_err:
                 logger.error("Failed to write to DuckDB: %s", db_err)
+
     return wrapper
+
 
 @log_performance
 def load_data(path: str) -> pd.DataFrame:
@@ -130,6 +135,7 @@ def load_data(path: str) -> pd.DataFrame:
     )
 
     return df
+
 
 @log_performance
 def filter_data(
