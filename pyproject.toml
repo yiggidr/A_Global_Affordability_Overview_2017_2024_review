@@ -16,6 +16,7 @@ dependencies = [
     "scikit-learn",
     "seaborn>=0.13.2",
     "streamlit>=1.36.0",
+    "streamlit-analytics2>=0.10.6",
 ]
 
 [dependency-groups]
