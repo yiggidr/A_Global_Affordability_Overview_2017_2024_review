@@ -1,12 +1,15 @@
 """Data loading and preprocessing utilities for the Global Affordability Dashboard.
 
 Handles CSV ingestion, numeric conversion, feature engineering, data quality checks,
-and flexible filtering for dashboard exploration.
+and flexible filtering for dashboard exploration. Includes performance monitoring via DuckDB.
 """
 
 from __future__ import annotations
 
 import logging
+import time
+import duckdb
+from functools import wraps
 
 import pandas as pd
 
@@ -22,23 +25,50 @@ NUMERIC_COLS: list[str] = [
 
 EXPECTED_REGIONS: set[str] = {"Africa", "Americas", "Asia", "Europe", "Oceania"}
 
+# DuckDB connexion for monitoring
+DB_PATH = "monitoring_logs.duckdb"
+try:
+    with duckdb.connect(DB_PATH) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS performance_logs (
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                function_name VARCHAR,
+                execution_time_seconds DOUBLE,
+                status VARCHAR
+            )
+        """)
+except Exception as e:
+    logger.error("Failed to initialize DuckDB monitoring: %s", e)
 
+
+def log_performance(func):
+    """Decorator to log function execution time to DuckDB."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        status = "SUCCESS"
+        try:
+            result = func(*args, **kwargs)
+            return result
+        except Exception as e:
+            status = f"ERROR: {str(e)}"
+            raise e
+        finally:
+            execution_time = time.time() - start_time
+            try:
+                with duckdb.connect(DB_PATH) as conn:
+                    conn.execute(
+                        "INSERT INTO performance_logs (function_name, execution_time_seconds, status) VALUES (?, ?, ?)",
+                        (func.__name__, execution_time, status)
+                    )
+                logger.info(f"Performance log: {func.__name__} executed in {execution_time:.3f}s [{status}]")
+            except Exception as db_err:
+                logger.error("Failed to write to DuckDB: %s", db_err)
+    return wrapper
+
+@log_performance
 def load_data(path: str) -> pd.DataFrame:
-    """Load and preprocess CSV data with feature engineering and quality checks.
-
-    Performs numeric conversion, derived feature creation, region validation,
-    and Year-over-Year percentage change calculation.
-
-    Parameters
-    ----------
-    path : str
-        Path to input CSV file.
-
-    Returns
-    -------
-    pd.DataFrame
-        Preprocessed dataframe ready for dashboard analysis.
-    """
+    """Load and preprocess CSV data with feature engineering and quality checks."""
     logger.info("Loading data from %s", path)
 
     df = pd.read_csv(path)
@@ -101,7 +131,7 @@ def load_data(path: str) -> pd.DataFrame:
 
     return df
 
-
+@log_performance
 def filter_data(
     df: pd.DataFrame,
     year_range: tuple[int, int],
@@ -111,33 +141,7 @@ def filter_data(
     countries: list[str],
     exclude_missing_components: bool,
 ) -> pd.DataFrame:
-    """Apply multi-dimensional filtering to dashboard data.
-
-    Supports year range, region, category, quality, country selection,
-    and component completeness filtering.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Preprocessed input dataframe.
-    year_range : tuple[int, int]
-        Min/max year filter.
-    regions : list[str]
-        Region filter values.
-    categories : list[str]
-        Cost category filter values.
-    qualities : list[str]
-        Data quality filter values.
-    countries : list[str]
-        Country filter values (optional).
-    exclude_missing_components : bool
-        Exclude rows missing any component cost data.
-
-    Returns
-    -------
-    pd.DataFrame
-        Filtered dataframe copy.
-    """
+    """Apply multi-dimensional filtering to dashboard data."""
     logger.debug(
         "Applying filters: years=%s, regions=%d, categories=%d, countries=%d, "
         "exclude_components=%s",
