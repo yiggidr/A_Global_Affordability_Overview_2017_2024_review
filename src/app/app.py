@@ -6,20 +6,27 @@ across countries, years, regions, and data-quality segments.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+_SRC_ROOT = Path(__file__).resolve().parent.parent
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
+
 import logging
 
 import duckdb
 import streamlit as st
 import streamlit_analytics2 as streamlit_analytics
 
-from app.constants import (
+from data.db import filter_data, load_data
+from features.constants import (
     COMPONENT_FOCUS_YEAR,
     CSS_PATH,
     DATA_PATH,
     RANKING_DISPLAY_NAMES,
 )
-from app.helpers import pretty_df, read_css_file
-from data.db import filter_data, load_data
+from features.helpers import pretty_df, read_css_file
 from features.analysis import (
     build_country_ranking,
     compute_correlation,
@@ -369,11 +376,8 @@ def render_monitoring_tab() -> None:
         st.error(f"Could not load monitoring data: {e}")
 
 
-    Returns
-    -------
-    None
-        Executes the full Streamlit app.
-    """
+def main() -> None:
+    """Execute the full Streamlit app."""
     st.set_page_config(page_title="Healthy Diet Dashboard", layout="wide")
 
     logger.info("Starting Healthy Diet Dashboard")

@@ -1,4 +1,4 @@
-"""Tests for ``app.helpers`` and ``app.constants`` (no Streamlit)."""
+"""Tests for ``features.helpers`` and ``features.constants`` (no Streamlit)."""
 
 from __future__ import annotations
 
@@ -7,8 +7,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from app.constants import DISPLAY_NAMES
-from app.helpers import pretty_df, read_css_file
+from features.constants import DISPLAY_NAMES
+from features.helpers import pretty_df, read_css_file
 
 
 def test_pretty_df_uses_default_display_names() -> None:
