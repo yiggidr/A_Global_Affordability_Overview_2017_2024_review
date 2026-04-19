@@ -1,9 +1,11 @@
-import click
 import logging
-from pathlib import Path
-from dotenv import find_dotenv, load_dotenv
-import duckdb
 import os
+from pathlib import Path
+
+import click
+import duckdb
+from dotenv import find_dotenv, load_dotenv
+
 from src.data.utils import configure_s3
 
 logger = logging.getLogger(__name__)
@@ -131,14 +133,14 @@ def basic_overview(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:
         A DuckDB relation containing summary statistics.
     """
     return rel.sql(
-        """
+        f"""
         SELECT 
             count(*) as rows,
             count(DISTINCT country) as unique_countries,
             count(DISTINCT region) as unique_regions,
             sum(CASE WHEN cost_vegetables_ppp_usd IS NULL THEN 1 ELSE 0 END) as null_costs
-        FROM {}
-    """.format(rel)
+        FROM {rel}
+    """
     )
 
 
@@ -175,7 +177,7 @@ def clean_data(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:
     """
 
     return rel.sql(
-        """
+        f"""
         SELECT *,
             CAST(cost_healthy_diet_ppp_usd AS DOUBLE) as cost_healthy_diet_ppp_usd,
             CAST(annual_cost_healthy_diet_usd AS DOUBLE) as annual_cost_healthy_diet_usd,
@@ -190,10 +192,10 @@ def clean_data(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:
 
             COALESCE(cost_category, 'Unknown') as cost_category
 
-        FROM {}
+        FROM {rel}
         WHERE cost_healthy_diet_ppp_usd IS NOT NULL
         ORDER BY country, year
-    """.format(rel)
+    """
     )
 
 
@@ -219,12 +221,12 @@ def region_consistency_check(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRel
     logger = logging.getLogger(__name__)
 
     inconsistent = rel.sql(
-        """
+        f"""
         SELECT country, count(DISTINCT region) as region_count
-        FROM {}
+        FROM {rel}
         GROUP BY country
         HAVING count(DISTINCT region) > 1
-    """.format(rel)
+    """
     )
 
     count_inconsistent = inconsistent.aggregate("count(*)").fetchone()[0]
