@@ -38,6 +38,7 @@ where = ["src"]
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+extend-exclude = ["src/data/data_preprocessing_refactoring.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

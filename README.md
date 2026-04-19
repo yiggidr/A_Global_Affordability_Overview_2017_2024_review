@@ -12,6 +12,10 @@ uv sync
 uv run streamlit run src/app/app.py
 ```
 
+Open the URL printed in the terminal (usually `http://localhost:8501`). Run tests with `uv run pytest`.
+
+**CI:** On every push and pull request, GitHub Actions runs `ruff check src tests` and `pytest` (see `.github/workflows/ci.yml`).
+
 ## Dashboard
 The dashboard is accessible at:
 **https://food-affordability-django75.lab.sspcloud.fr**

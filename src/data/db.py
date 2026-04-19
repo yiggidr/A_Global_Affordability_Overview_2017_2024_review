@@ -1,16 +1,17 @@
 """Data loading and preprocessing utilities for the Global Affordability Dashboard.
 
-Handles CSV ingestion, numeric conversion, feature engineering, data quality checks,
-and flexible filtering for dashboard exploration. Includes performance monitoring via DuckDB.
+Handles CSV ingestion, numeric conversion, feature engineering, data quality
+checks, and flexible filtering for dashboard exploration. Includes performance
+monitoring via DuckDB.
 """
 
 from __future__ import annotations
 
 import logging
 import time
-import duckdb
 from functools import wraps
 
+import duckdb
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -59,11 +60,16 @@ def log_performance(func):
             try:
                 with duckdb.connect(DB_PATH) as conn:
                     conn.execute(
-                        "INSERT INTO performance_logs (function_name, execution_time_seconds, status) VALUES (?, ?, ?)",
+                        "INSERT INTO performance_logs "
+                        "(function_name, execution_time_seconds, status) "
+                        "VALUES (?, ?, ?)",
                         (func.__name__, execution_time, status),
                     )
                 logger.info(
-                    f"Performance log: {func.__name__} executed in {execution_time:.3f}s [{status}]"
+                    "Performance log: %s executed in %.3fs [%s]",
+                    func.__name__,
+                    execution_time,
+                    status,
                 )
             except Exception as db_err:
                 logger.error("Failed to write to DuckDB: %s", db_err)
