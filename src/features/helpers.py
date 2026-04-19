@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.constants import DISPLAY_NAMES
+from features.constants import DISPLAY_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ def pretty_df(
     df : pandas.DataFrame
         Input dataframe with technical column names.
     column_map : Mapping[str, str], optional
-        Column rename mapping. Defaults to :data:`app.constants.DISPLAY_NAMES`.
+        Column rename mapping. Defaults to :data:`features.constants.DISPLAY_NAMES`.
 
     Returns
     -------

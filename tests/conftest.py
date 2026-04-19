@@ -1,8 +1,8 @@
 """Pytest shared fixtures.
 
-Pure dashboard logic lives in ``app.helpers`` and ``app.constants`` (no
-Streamlit). ``app.app`` still uses Streamlit for UI; test layout/widgets with
-Streamlit's testing utilities if you add those tests later.
+Pure dashboard logic lives in ``features.helpers`` and ``features.constants``
+(no Streamlit). ``app.app`` still uses Streamlit for UI; test layout/widgets
+with Streamlit's testing utilities if you add those tests later.
 """
 
 from __future__ import annotations
