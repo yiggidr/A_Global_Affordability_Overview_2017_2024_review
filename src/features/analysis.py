@@ -429,30 +429,33 @@ def generate_insights(
         )
         if not top_country.empty and not bottom_country.empty:
             insights.append(
-                f"In {focus_year}, the highest observed country-level value in the filtered "
-                f"data is {top_country.index[0]} ({top_country.iloc[0]:.2f}), while the "
-                f"lowest is {bottom_country.index[0]} ({bottom_country.iloc[0]:.2f})."
+                f"In {focus_year}, the highest observed country-level value in the "
+                f"filtered data is {top_country.index[0]} ({top_country.iloc[0]:.2f}), "
+                f"while the lowest is {bottom_country.index[0]} "
+                f"({bottom_country.iloc[0]:.2f})."
             )
 
     yoy = df["yoy_pct"].dropna()
     if not yoy.empty:
         insights.append(
-            f"Year-over-year changes show a median of {yoy.median():.2f}% and a standard "
-            f"deviation of {yoy.std():.2f}%, indicating non-trivial volatility across "
-            f"countries and years."
+            f"Year-over-year changes show a median of {yoy.median():.2f}% and a "
+            f"standard deviation of {yoy.std():.2f}%, indicating non-trivial "
+            f"volatility across countries and years."
         )
 
     est_share = df["data_quality"].eq("Estimated value").mean() * 100
     insights.append(
         f"Estimated values represent {est_share:.1f}% of the filtered rows, so the "
-        f"dashboard should be used as descriptive evidence rather than a causal proof engine."
+        f"dashboard should be used as descriptive evidence rather than a causal "
+        f"proof engine."
     )
 
     suspect_share = df["region_is_suspect"].mean() * 100
     if suspect_share > 0:
         insights.append(
-            f"About {suspect_share:.1f}% of filtered rows belong to countries with potentially "
-            f"inconsistent region assignments, so regional interpretation requires caution."
+            f"About {suspect_share:.1f}% of filtered rows belong to countries with "
+            f"potentially inconsistent region assignments, so regional interpretation "
+            f"requires caution."
         )
 
     logger.debug("Generated %s insights", len(insights))

@@ -19,14 +19,7 @@ import duckdb
 import streamlit as st
 import streamlit_analytics2 as streamlit_analytics
 
-from data.db import filter_data, load_data
-from features.constants import (
-    COMPONENT_FOCUS_YEAR,
-    CSS_PATH,
-    DATA_PATH,
-    RANKING_DISPLAY_NAMES,
-)
-from features.helpers import pretty_df, read_css_file
+from data.db import DB_PATH, filter_data, load_data
 from features.analysis import (
     build_country_ranking,
     compute_correlation,
@@ -37,6 +30,18 @@ from features.analysis import (
     top_and_bottom_countries,
     yearly_summary,
 )
+from features.constants import (
+    COMPONENT_FOCUS_YEAR,
+    CSS_PATH,
+    DATA_PATH,
+    RANKING_DISPLAY_NAMES,
+)
+from features.dashboard_presets import (
+    SNAPSHOT_KEYS,
+    builtin_presets,
+    clamp_snapshot_to_df,
+)
+from features.helpers import pretty_df, read_css_file
 from features.plots import (
     plot_category_distribution,
     plot_component_breakdown,
@@ -78,90 +83,185 @@ def get_data():
     return load_data(DATA_PATH)
 
 
+def _sidebar_snapshot_from_session() -> dict:
+    return {k: st.session_state[f"dash_{k}"] for k in SNAPSHOT_KEYS}
+
+
 def render_sidebar(df):
-    """Render sidebar filters and return selected values."""
+    """Render sidebar filters: presets, keyed widgets, return filter dict."""
     logger.debug("Rendering sidebar filters")
+
+    builtins = builtin_presets(df)
+    default_snap = builtins["All years & categories (max coverage)"]
+    for k in SNAPSHOT_KEYS:
+        sk = f"dash_{k}"
+        if sk not in st.session_state:
+            st.session_state[sk] = default_snap[k]
+
+    st.sidebar.markdown("### Presets")
+    user_presets: dict = st.session_state.setdefault("user_filter_presets", {})
+    builtin_names = list(builtins.keys())
+    preset_choices = ["—"] + builtin_names + list(user_presets.keys())
+    picked = st.sidebar.selectbox(
+        "Load a preset",
+        preset_choices,
+        index=0,
+        help="Built-in views or your saved presets (this session).",
+    )
+    save_name = st.sidebar.text_input(
+        "Save current filters as",
+        placeholder="e.g. My EU view",
+        key="dash_save_preset_name_input",
+    )
+    c_apply, c_save = st.sidebar.columns(2)
+    with c_apply:
+        apply_clicked = st.button("Apply preset", use_container_width=True)
+    with c_save:
+        save_clicked = st.button("Save as preset", use_container_width=True)
+
+    if apply_clicked and picked != "—":
+        snap = builtins.get(picked) or user_presets.get(picked)
+        if snap:
+            snap = clamp_snapshot_to_df(snap, df)
+            for k in SNAPSHOT_KEYS:
+                st.session_state[f"dash_{k}"] = snap[k]
+            st.rerun()
+
+    if save_clicked and save_name.strip():
+        user_presets[save_name.strip()] = _sidebar_snapshot_from_session()
+        st.session_state["user_filter_presets"] = user_presets
+        st.success(f"Saved “{save_name.strip()}”.")
+        st.rerun()
 
     st.sidebar.header("Filters")
 
     min_year = int(df["year"].min())
     max_year = int(df["year"].max())
 
-    year_range = st.sidebar.slider(
+    st.sidebar.slider(
         "Year range",
         min_year,
         max_year,
-        (min_year, max_year),
+        key="dash_year_range",
     )
 
     focus_year_options = sorted(df["year"].dropna().unique().tolist())
-    focus_year = st.sidebar.selectbox(
+    st.sidebar.selectbox(
         "Focus year",
         options=focus_year_options,
-        index=len(focus_year_options) - 1,
+        key="dash_focus_year",
     )
 
-    metric_label = st.sidebar.radio(
+    st.sidebar.radio(
         "Metric",
         options=["PPP USD / day", "Annual USD"],
-        index=0,
+        key="dash_metric_label",
     )
+
+    metric_label = st.session_state["dash_metric_label"]
     metric_col = {
         "PPP USD / day": "cost_healthy_diet_ppp_usd",
         "Annual USD": "annual_cost_healthy_diet_usd",
     }[metric_label]
 
     region_options = sorted(df["region_clean"].dropna().unique().tolist())
-    selected_regions = st.sidebar.multiselect(
+    st.sidebar.multiselect(
         "Region",
         options=region_options,
-        default=region_options,
+        key="dash_selected_regions",
     )
 
     category_options = sorted(df["cost_category"].dropna().unique().tolist())
-    selected_categories = st.sidebar.multiselect(
+    st.sidebar.multiselect(
         "Cost category",
         options=category_options,
-        default=category_options,
+        key="dash_selected_categories",
     )
 
     quality_options = sorted(df["data_quality"].dropna().unique().tolist())
-    selected_quality = st.sidebar.multiselect(
+    st.sidebar.multiselect(
         "Data quality",
         options=quality_options,
-        default=quality_options,
+        key="dash_selected_quality",
     )
 
     countries = sorted(df["country"].dropna().unique().tolist())
-    selected_countries = st.sidebar.multiselect(
+    st.sidebar.multiselect(
         "Countries (optional)",
         options=countries,
-        default=[],
+        key="dash_selected_countries",
     )
 
-    exclude_missing_components = st.sidebar.checkbox(
+    st.sidebar.checkbox(
         "Exclude rows with missing component costs",
-        value=False,
+        key="dash_exclude_missing_components",
     )
-    show_region_warning = st.sidebar.checkbox(
+    st.sidebar.checkbox(
         "Show region quality warning",
-        value=True,
+        key="dash_show_region_warning",
     )
 
     return {
         "min_year": min_year,
         "max_year": max_year,
-        "year_range": year_range,
-        "focus_year": focus_year,
+        "year_range": st.session_state["dash_year_range"],
+        "focus_year": st.session_state["dash_focus_year"],
         "metric_label": metric_label,
         "metric_col": metric_col,
-        "selected_regions": selected_regions,
-        "selected_categories": selected_categories,
-        "selected_quality": selected_quality,
-        "selected_countries": selected_countries,
-        "exclude_missing_components": exclude_missing_components,
-        "show_region_warning": show_region_warning,
+        "selected_regions": st.session_state["dash_selected_regions"],
+        "selected_categories": st.session_state["dash_selected_categories"],
+        "selected_quality": st.session_state["dash_selected_quality"],
+        "selected_countries": st.session_state["dash_selected_countries"],
+        "exclude_missing_components": st.session_state[
+            "dash_exclude_missing_components"
+        ],
+        "show_region_warning": st.session_state["dash_show_region_warning"],
     }
+
+
+def render_sidebar_export(filtered_df) -> None:
+    """CSV download for the current filtered table."""
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Export")
+    csv_bytes = filtered_df.to_csv(index=False).encode("utf-8")
+    st.sidebar.download_button(
+        label="Download filtered data (CSV)",
+        data=csv_bytes,
+        file_name="healthy_diet_filtered.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+
+
+def render_no_data_help(filters: dict, df) -> None:
+    """Explain empty results and suggest filter changes."""
+    st.error("No rows match your current filters.")
+    yr = filters["year_range"]
+    st.info(
+        f"**Current selection:** years **{yr[0]}–{yr[1]}**, "
+        f"focus year **{filters['focus_year']}**, "
+        f"metric **{filters['metric_label']}**, "
+        f"**{len(filters['selected_regions'])}** region(s), "
+        f"**{len(filters['selected_categories'])}** cost category/categories, "
+        f"**{len(filters['selected_quality'])}** data-quality value(s), "
+        f"**{len(filters['selected_countries'])}** country filter(s). "
+        f"Exclude missing components: **{filters['exclude_missing_components']}**."
+    )
+    with st.expander("How to get rows back", expanded=True):
+        st.markdown(
+            """
+            - **Regions, cost categories, data quality:** keep **at least one**
+              value in each list (empty list → no rows).
+            - **Optional countries:** clear the country filter to include **all**
+              countries.
+            - **Year range:** widen the slider if needed (see dataset span below).
+            - **Exclude missing component costs:** turn **off** if it drops all rows.
+            """
+        )
+    st.caption(
+        f"Dataset overall: years {int(df['year'].min())}–{int(df['year'].max())}, "
+        f"{df['country'].nunique()} countries."
+    )
 
 
 def render_kpis(
@@ -184,7 +284,8 @@ def render_introduction_tab() -> None:
     st.subheader("Project presentation")
     st.markdown(
         """
-This dashboard was developed by **Kwame Mbobda-Kuate, Paco Goze, Youssef Hamzaoui and Avner EL BAZ** as an interactive data application
+This dashboard was developed by **Kwame Mbobda-Kuate, Paco Goze,**
+**Youssef Hamzaoui and Avner EL BAZ** as an interactive data application
 for exploring the global cost of a healthy diet across countries, years, regions,
 and data-quality segments.
 
@@ -386,7 +487,8 @@ def main() -> None:
 
     st.title("Global Healthy Diet Dashboard")
     st.caption(
-        "Interactive dashboard for exploring the cost of a healthy diet across countries, years, and quality segments."
+        "Interactive dashboard for exploring the cost of a healthy diet "
+        "across countries, years, and quality segments."
     )
 
     # Audience tracking
@@ -408,8 +510,10 @@ def main() -> None:
 
         if filtered_df.empty:
             logger.warning("No data available after applying filters")
-            st.error("No data matches the selected filters.")
+            render_no_data_help(filters, df)
             st.stop()
+
+        render_sidebar_export(filtered_df)
 
         render_kpis(
             filtered_df,
