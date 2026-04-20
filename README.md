@@ -44,8 +44,7 @@ The application will be available at `http://localhost:8501`.
 ├── Dockerfile        # Container definition
 └── .github/
     └── workflows/
-        ├── docker.yml         # CI: builds and pushes Docker image on push to master
-        └── data_pipeline.yml  # Scheduled weekly data ingestion from Kaggle to S3
+        └── docker.yml         # CI: builds and pushes Docker image on push to master
 ```
 
 ---
