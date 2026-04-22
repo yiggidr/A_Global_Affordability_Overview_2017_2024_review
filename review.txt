@@ -1,0 +1,14 @@
+Voici ma revue de code de ce projet :
+
+Je dois commencer par dire que l'application interactive sur Streamlit est très agréable à utiliser (que ce soit en terme d'ergonomie, ou en terme d'esthétisme). 
+Les données sont bien affichés et les visuels sont soignés.
+
+Ensuite, sur la structure du projet, il y a quelques éléments qui m'interrogent, bien qu'ils ne soient pas des freins à ce projet :
+- les dossiers models, references et reports qui sont vides, les supprimer rendrait le repo plus ordonné et plus facile à naviguer,
+- le fichier main.py qui ne fait que print un Hello,
+- le fait d'avoir conservé des notebooks, qui peuvent facilement être transformés en des .py comme le code est propre, ce qui est plus adapté à de la mise en production
+- le fichier docs/getting-started.rst qui contient uniquement une introduction générée automatiquement, mais n'apporte aucune information sur le projet.
+- les graphiques mériteraient davantage de commentaires, et il manque une conclusion au sein de l'application interactive qui apporte une réponse à la problématique du projet.
+
+À part ces points, qui ne sont que des détails redondants ou qui n'apportent pas d'informations au projet, le projet est vraiment de bonne qualité, félicitations ! :) 
+Younes Iggidr
